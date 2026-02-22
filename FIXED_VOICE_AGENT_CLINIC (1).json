@@ -1,0 +1,370 @@
+{
+  "name": "FIXED_VOICE_AGENT_CLINIC",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "871a9333-eaf5-43bd-afa0-43fdc9bb8d53",
+      "name": "Webhook",
+      "webhookId": "114c5d5d-45f9-4a69-abde-38e5577bfd91"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.body.conversation_id || 'default_session' }}",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        160,
+        352
+      ],
+      "id": "d1e0e4b6-d5cf-40fc-9a8a-19b3483b5aa3",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.body }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "ROLE\nYou are an autonomous appointment booking agent.\n\nMISSION\nCollect booking details and complete the booking using connected tools.\n\nREQUIRED BOOKING DETAILS\n\ncustomer_name\n\ncustomer_email\n\nphone_number\n\nappointment_type\n\nstart_time (ISO-8601 format)\n\nIf any detail is missing, ask briefly for only that detail.\n\nTOOL EXECUTION LOGIC\n\nWhen start_time is provided → call the Calendar availability tool first and the tool name is APPOINTMENT_BOOKING\n\n\nAfter successful event creation → immediately call the sendGmail tool to send confirmation.\n\nNever respond with booking confirmation text unless all required tools have been successfully executed.\n\nNever output JSON manually.\n\nNever explain that you are calling a tool.\n\nAlways prefer calling a tool over responding conversationally when sufficient data exists.\n\nDATE RULE\n\nToday is February 10, 2026.\nConvert relative time expressions into absolute ISO-8601 format including timezone.\n\nIf duration is not provided, assume 30 minutes.\n\nRESPONSE STYLE\n\nKeep messages under 20 words when asking for missing information.\n\nBe professional and concise."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        224,
+        0
+      ],
+      "id": "0f05d023-42ff-4332-8f34-580c2ad18359",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "{\n  \"response\": \"I understand you want to book an appointment. To do that, I need a bit more information from you. Please tell me:\n\n1.  **What is the desired start time for the appointment?** (e.g., \"tomorrow at 10 AM\", \"June 15th at 2 PM\")\n2.  **What is the desired end time for the appointment?** (e.g., \"11 AM\", \"3 PM\")\n3.  **What is the reason for the visit?** (e.g., \"routine check-up\", \"consultation about a persistent cough\")\n\nOnce I have these details, I can proceed with booking your appointment.\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1456,
+        -16
+      ],
+      "id": "c89fd6d1-b430-4e14-af63-b7dcae7512b5",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Check if a time slot is free. Input TimeMax should be 1 hour after TimeMin.",
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "c_classroom666f3c4f@group.calendar.google.com",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        720
+      ],
+      "id": "1ecf9660-7633-42b5-8b58-0bbbcf7e81e0",
+      "name": "CHECK AVAILABILITY",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "twyoPyFCPjKeDss5",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "projectId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleVertex",
+      "typeVersion": 1,
+      "position": [
+        32,
+        432
+      ],
+      "id": "4ceeca9b-4488-4383-8d64-5da965097222",
+      "name": "Google Vertex Chat Model"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Webhook').item.json.body.to }}",
+        "subject": "=meeting",
+        "message": "={{ $('Webhook').item.json.body.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        576,
+        0
+      ],
+      "id": "9f544f16-0d13-4758-b39e-9a9054985791",
+      "name": "Send a message",
+      "webhookId": "8b610299-7324-45e7-9ffd-3ccd36c8242c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "TRq33EsbdhIFuyxK",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        80,
+        208
+      ],
+      "id": "dda46187-159c-45e9-9b7b-ebc363b55676",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "YacCpe6BAEM1XMNe",
+          "name": "Groq account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "calendar": {
+          "__rl": true,
+          "value": "c_classroomc9ece90f@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "TOC A,B,C"
+        },
+        "timeMin": "={{ DateTime.fromFormat($('Webhook').item.json.body.start_time, \"d-M-yyyy ha\").toISO() }}",
+        "timeMax": "={{ DateTime.fromFormat($('Webhook').item.json.body.end_time_event, \"d-M-yyyy ha\").toISO() }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        784,
+        0
+      ],
+      "id": "26df80fc-cd95-43f2-abef-d1e4d3f5f4b3",
+      "name": "Get availability in a calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "twyoPyFCPjKeDss5",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "anushka.s.gurav@cumminscollege.in",
+          "mode": "list",
+          "cachedResultName": "anushka.s.gurav@cumminscollege.in"
+        },
+        "start": "={{ DateTime.fromFormat($('Webhook').item.json.body.start_time, \"d-M-yyyy ha\").toISO() }}",
+        "end": "={{ DateTime.fromFormat($('Webhook').item.json.body.end_time_event, \"d-M-yyyy ha\").toISO() }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1248,
+        -16
+      ],
+      "id": "bb36e834-7894-4d74-bcc0-5f4d3161e1ce",
+      "name": "Create an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "twyoPyFCPjKeDss5",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b051d75b-11cd-4fef-9f40-a812fc66dc78",
+              "leftValue": "={{ $json.available }}",
+              "rightValue": "={{ true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "e62b3419-8d4b-4163-a127-60dc8b3328eb",
+              "leftValue": "={{ $json.available }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "looseTypeValidation": "={{ false }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        992,
+        0
+      ],
+      "id": "71a1ccca-0374-4b53-bc0b-6f1b288d3d87",
+      "name": "If"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CHECK AVAILABILITY": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Vertex Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Get availability in a calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get availability in a calendar": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Create an event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "ddc3b2d1-1d6a-4966-a44e-b8de887873f0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6c3e478a60f9c81a8a6cf97954da409733a5f57c14047390969656a6990b9ae3"
+  },
+  "id": "mgzQb1UfBarp8aMl",
+  "tags": []
+}

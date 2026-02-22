@@ -1,0 +1,207 @@
+{
+  "name": "Voice Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "n8n",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f4922bbd-1cd2-4711-9b76-fedaee028723",
+      "name": "Webhook",
+      "webhookId": "4be15951-1e3f-415e-844a-7e613ead2331"
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-3-haiku",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        80,
+        208
+      ],
+      "id": "929486e5-d7fe-4e4d-bd67-4f1f6891a03d",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "WJgmgFm5wI79D73S",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        480,
+        0
+      ],
+      "id": "4340b780-344c-42d2-b07d-74141359b181",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1S-F4Xmysc4xsKkSt5deTOwr6Djyk7n7ED20hBJhgyKM",
+          "mode": "list",
+          "cachedResultName": "Contact Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1S-F4Xmysc4xsKkSt5deTOwr6Djyk7n7ED20hBJhgyKM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1S-F4Xmysc4xsKkSt5deTOwr6Djyk7n7ED20hBJhgyKM/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Email",
+              "lookupValue": "={{ $json.body.to }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        464,
+        304
+      ],
+      "id": "31ddbf39-7122-436c-9b75-dcdf5f50d16d",
+      "name": "Contact Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YR1K0JTuFqRlyPzV",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.body.to }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ $json.body.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        304,
+        256
+      ],
+      "id": "452a670d-09c2-4a74-a80d-8f110a5eb06e",
+      "name": "Send a message in Gmail",
+      "webhookId": "f35ea0d8-3c46-4a3e-b961-a768635de829",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "TRq33EsbdhIFuyxK",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Email to : {{ $json.body.to }}\nEmail Content : {{ $json.body.body }}",
+        "options": {
+          "systemMessage": "#Overview \nyou are an AI agent responsible for drafting and sending professional emails based on user instructions. you have access to two tools : `contactData` to find email addresses and `sendEmail` to compose and send emails. your objective is to identify the recipient's context information, draft a professional email, and sign off as \"Nate\" before sending.\n\n\n---\n\n## Tools \n- **contactData** : Retrieves the recipient's email address based on their name.\n**Input**: Name (e.g., \"John Doe\").\n**Output**: Email Address (e.g., \"johndoe@example.com\").\n\n- **sendEmail** : Send an email with a subject and body.\n**Input**:\n- `Recipient` : Email address (e.g., \"johndoe@example.com\").\n- `Subject` : Email subject (e.g., \"Meeting request\").\n- `body` : Email body (e.g., \"Hi John, meeting is set for tuesday.\")."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "7278da14-c734-4036-8aa0-1b81aed6159c",
+      "name": "Email agent"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Email agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Sheet": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "044a7897-f20b-4518-af03-ee70ad02eb97",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6c3e478a60f9c81a8a6cf97954da409733a5f57c14047390969656a6990b9ae3"
+  },
+  "id": "Jg5P0opgBf0W0Bf4",
+  "tags": []
+}

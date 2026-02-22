@@ -1,0 +1,101 @@
+{
+  "name": "MCP server",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "n8n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        64
+      ],
+      "id": "a87ffe3e-f274-46c8-97c7-c249ec955904",
+      "name": "MCP Server Trigger",
+      "webhookId": "0c88ef7d-2841-4691-9f85-d8556f1be923"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        -112,
+        304
+      ],
+      "id": "aed1d749-2bfc-430f-a6e4-ba66e8e3e8de",
+      "name": "Send a message in Gmail",
+      "webhookId": "a21cc7fc-7d2c-4c27-8032-3c418c125116",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "TRq33EsbdhIFuyxK",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 5,
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        160,
+        304
+      ],
+      "id": "f230c29c-a2c8-44d3-a275-8c0e3ed46aba",
+      "name": "GET mails",
+      "webhookId": "e2b0c894-3eaf-4a94-b70a-1b7c4438c0da",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "TRq33EsbdhIFuyxK",
+          "name": "Gmail account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Send a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET mails": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "eec9b16c-da4f-47b8-91fb-be5f56a283d9",
+  "meta": {
+    "instanceId": "6c3e478a60f9c81a8a6cf97954da409733a5f57c14047390969656a6990b9ae3"
+  },
+  "id": "hJh78v3pORjqiNtj",
+  "tags": []
+}
